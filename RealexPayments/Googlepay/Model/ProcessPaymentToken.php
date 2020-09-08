@@ -139,8 +139,15 @@ class ProcessPaymentToken {
             $this->_logger->critical("Realex Google Error: Secret hasn't been set.");
         }
 
-        if(!$quote = $this->getQuoteFromMask($quoteId)) {
-            $this->_logger->critical("Realex Google Error: Unable to load quote from masked id.");
+        if (is_numeric($quoteId)) {
+            if (!$quote = $this->quoteRepository->get($quoteId)) {
+                $this->_logger->critical("Realex Google Error: Unable to load quote $quoteId.");
+            }
+        }
+        else {
+            if (!$quote = $this->getQuoteFromMask($quoteId)) {
+                $this->_logger->critical("Realex Google Error: Unable to load quote from masked id $quoteId.");
+            }
         }
 
 
