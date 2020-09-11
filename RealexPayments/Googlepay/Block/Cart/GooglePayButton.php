@@ -9,7 +9,6 @@ use Magento\Checkout\Model\DefaultConfigProvider;
 use Magento\Framework\Exception\InputException;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\View\Element\Template\Context;
-use Magento\Payment\Model\MethodInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\UrlInterface;
@@ -18,7 +17,6 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 
 class GooglePayButton extends Template
 {
-
     protected $checkoutSession;
     protected $scopeConfig;
     /**
@@ -28,7 +26,6 @@ class GooglePayButton extends Template
     public function __construct(
         Template\Context $context,
         Session $checkoutSession,
-        MethodInterface $payment,
         DefaultConfigProvider $defaultConfigProvider,
         CustomerSession $customerSession,
         UrlInterface $url,
@@ -39,7 +36,6 @@ class GooglePayButton extends Template
         parent::__construct($context, $data);
 
         $this->checkoutSession = $checkoutSession;
-        $this->payment = $payment;
         $this->defaultConfigProvider = $defaultConfigProvider;
         $this->customerSession = $customerSession;
         $this->url = $url;
