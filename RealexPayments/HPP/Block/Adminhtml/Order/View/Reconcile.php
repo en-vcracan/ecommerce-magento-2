@@ -26,5 +26,4 @@ class Reconcile extends \Magento\Sales\Block\Adminhtml\Order\View
     {
         return $this->getUrl('realexpayments_hpp/order/reconcile/');
     }
-
 }
