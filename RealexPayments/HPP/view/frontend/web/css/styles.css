@@ -4,3 +4,7 @@
 .modal-popup.modal-slide{
   left:0px;
 }
+
+.modal-slide__show {
+    z-index: 902;
+}
