@@ -131,33 +131,45 @@ class RemoteXML implements \RealexPayments\HPP\Api\RemoteXMLInterface
             $this->_helper->setStoreId($storeId)->getEncryptedConfigData('rebate_secret')
         );
         $transaction = $this->_getTransaction($payment);
-        $additional = $payment->getAdditionalInformation();
-        $is_paypal = !empty($additional['PAYMENTMETHOD']) && $additional['PAYMENTMETHOD'] == 'paypal';
-        $orderId = $additional['ORDER_ID'];
+        $additional = $this->_toStrUpperArrayKeys($payment->getAdditionalInformation());
+        $is_apm = !empty($additional['PAYMENTMETHOD']);
+        $orderId = !empty($additional['ORDERID']) ? $additional['ORDERID'] : $additional['ORDER_ID'];
+        $multiSettleMode = !empty($additional['AUTO_SETTLE_FLAG'])
+            && $additional['AUTO_SETTLE_FLAG'] === SettleMode::SETTLEMODE_MULTI;
 
-        $transactionAdditionalInfo = $transaction->getAdditionalInformation(
-            \Magento\Sales\Model\Order\Payment\Transaction::RAW_DETAILS
+        if ($multiSettleMode && !$is_apm) {
+            $orderId = '_multisettle_' . $additional['ORDER_ID'];
+        }
+
+        $transactionAdditionalInfo = $this->_toStrUpperArrayKeys(
+            $transaction->getAdditionalInformation(
+                \Magento\Sales\Model\Order\Payment\Transaction::RAW_DETAILS
+            )
         );
 
-        if (!empty($transactionAdditionalInfo['PASREF'])) {
+        if (!empty($transactionAdditionalInfo['PASREF']) && ($multiSettleMode || $is_apm)) {
             $pasref = $transactionAdditionalInfo['PASREF'];
         } else {
-            $pasref = $additional['PASREF'];
+            $pasref = !empty($additional['PASREF']) ? $additional['PASREF'] : '';
         }
 
         $request = $this->_requestFactory->create();
-        if ($is_paypal) {
-            $request->setPaymentMethod('paypal');
+        if ($is_apm) {
+            $request->setPaymentMethod($additional['PAYMENTMETHOD']);
             $request->setType(Request\Request::TYPE_PAYMENT_CREDIT);
         } else {
             $request->setType(Request\Request::TYPE_REBATE);
         }
+
+        if (isset($additional['AUTHCODE'])) {
+            $request->setAuthCode($additional['AUTHCODE']);
+        }
+
         $request = $request->setStoreId($storeId)
                   ->setMerchantId($additional['MERCHANT_ID'])
                   ->setAccount($additional['ACCOUNT'])
                   ->setOrderId($orderId)
                   ->setPasref($pasref)
-                  ->setAuthCode($additional['AUTHCODE'])
                   ->setAmount($amount)
                   ->setCurrency($payment->getOrder()->getBaseCurrencyCode())
                   ->setComments($comments)
@@ -324,5 +336,18 @@ class RemoteXML implements \RealexPayments\HPP\Api\RemoteXMLInterface
         );
 
         return $transaction;
+    }
+
+    private function _toStrUpperArrayKeys($array)
+    {
+        $new_array = array();
+        foreach ($array as $key => $value) {
+            if (is_string($key)) {
+                $key = strtoupper($key);
+            }
+            $new_array[$key] = $value;
+        }
+
+        return $new_array;
     }
 }
